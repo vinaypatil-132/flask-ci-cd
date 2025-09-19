@@ -13,11 +13,11 @@ pipeline {
     stage('Unit Tests') {
       steps {
         sh '''
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install --upgrade pip
-            pip install -r requirements.txt
-            pytest -q
+          python3 -m venv venv
+          . venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pytest -q
         '''
       }
     }
@@ -45,7 +45,7 @@ pipeline {
 
     stage('Blue-Green Deploy') {
       steps {
-        sh '''
+        sh '''#!/bin/bash
           set -euo pipefail
 
           # create network if missing
@@ -96,9 +96,9 @@ http {
     listen 80;
     location / {
       proxy_pass http://__UPSTREAM__:5000;
-      proxy_set_header Host \$host;
-      proxy_set_header X-Real-IP \$remote_addr;
-      proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
   }
 }
@@ -113,7 +113,7 @@ NGINXCONF
           # safely remove old app container
           docker rm -f "$OLD_NAME" >/dev/null 2>&1 || true
 
-          echo "Deployment complete. App is available at http://localhost:8081/ (proxied to $NEW_NAME)."
+          echo "✅ Deployment complete. App is available at http://localhost:8081/ (proxied to $NEW_NAME)."
         '''
       }
     }
