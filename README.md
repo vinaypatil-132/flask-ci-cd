@@ -43,7 +43,7 @@ flask-ci-cd/
 
 ### 1. Clone Repo
 ```bash
-git clone https://github.com/<your-username>/flask-ci-cd.git
+git clone https://github.com/vinaypatil-132/flask-ci-cd.git
 cd flask-ci-cd
 ```
 ### 2. Setup Python Environment
