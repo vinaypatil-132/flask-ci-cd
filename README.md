@@ -23,16 +23,18 @@ This project demonstrates a **Flask web application** integrated with a **CI/CD 
 ---
 
 ## 📂 Project Structure
+```
 flask-ci-cd/
-│── app.py # Main Flask app
-│── requirements.txt # Python dependencies
-│── templates/
-│ └── index.html # HTML template
-│── tests/
-│ └── test_app.py # Sample unit test
-│── Jenkinsfile # CI/CD pipeline config
-│── .gitignore # Ignore unnecessary files
-│── README.md # Project documentation
+├── app.py              # Main Flask app
+├── requirements.txt    # Python dependencies
+├── templates/
+│   └── index.html      # HTML template
+├── tests/
+│   └── test_app.py     # Sample unit test
+├── Jenkinsfile         # CI/CD pipeline config
+├── .gitignore          # Ignore unnecessary files
+└── README.md           # Project documentation
+```
 
 
 ---
