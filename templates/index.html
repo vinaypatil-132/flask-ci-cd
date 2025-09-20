@@ -1,104 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Notebook App</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📒 Realistic Notebook App</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.14.1/gsap.min.js"></script>
+<style>
+  body {
+    background: #f3f1ee;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  .notebook {
+    perspective: 2000px;
+    width: 90%;
+    max-width: 800px;
+    margin: 50px auto;
+    position: relative;
+  }
+  .cover, .page {
+    width: 100%;
+    height: 500px;
+    border-radius: 12px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    backface-visibility: hidden;
+    transform-origin: left center;
+    overflow: hidden;
+  }
+  .cover {
+    background: linear-gradient(to bottom, #7b3f00, #4e2600);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+  }
+  .page {
+    background: #fffbe6;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    overflow-y: auto;
+    border-left: 4px solid #d9b36c;
+    transform: rotateY(-180deg);
+  }
+  .page h2 { font-size: 1.5rem; margin-bottom: 5px; }
+  textarea { width: 100%; border: none; outline: none; background: transparent; resize: none; font-size: 1rem; }
+  .page-number {
+    text-align: right;
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: auto;
+  }
+  .sticky-note {
+    background: #fff9b0;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+    margin-bottom: 10px;
+    position: relative;
+    cursor: grab;
+    transition: transform 0.2s;
+  }
+  .sticky-note:hover { transform: scale(1.02) rotateZ(1deg); }
+  @media (max-width: 768px) {
+    .notebook { margin: 20px auto; }
+    .cover, .page { height: 400px; }
+  }
+</style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
-  <header class="bg-indigo-600 text-white p-4 shadow-md">
-    <h1 class="text-2xl font-bold">📒 Notebook</h1>
-  </header>
+<body>
 
-  <main class="flex-grow container mx-auto p-4">
-    <div class="flex gap-2 mb-4">
-      <input id="title" placeholder="Note title"
-        class="flex-1 border p-2 rounded focus:ring focus:ring-indigo-300" />
-      <button onclick="saveNote()"
-        class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition">
-        Save
-      </button>
-    </div>
-    <textarea id="body" rows="4" placeholder="Write your note..."
-      class="w-full border p-2 rounded focus:ring focus:ring-indigo-300"></textarea>
+<div class="notebook relative">
+  <!-- Closed Notebook Cover -->
+  <div class="cover">📒 My Notebook</div>
 
-    <h2 class="text-xl font-semibold mt-6 mb-2">Your Notes</h2>
-    <div id="notes" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
-  </main>
+  <!-- Notebook Pages -->
+  <div id="pagesContainer"></div>
+</div>
 
-  <footer class="bg-gray-200 text-center py-3 text-sm">
-    Built with ❤️ using Flask + Tailwind
-  </footer>
+<script>
+const cover = document.querySelector('.cover');
+const pagesContainer = document.getElementById('pagesContainer');
+let currentPageIndex = 0;
 
-  <script>
-    const notesEl = document.getElementById("notes");
-    const titleEl = document.getElementById("title");
-    const bodyEl = document.getElementById("body");
-    let editingId = null;
-
-    async function fetchNotes() {
-      const res = await fetch("/api/notes");
-      const notes = await res.json();
-      notesEl.innerHTML = "";
-      notes.forEach(note => {
-        const div = document.createElement("div");
-        div.className =
-          "p-4 bg-white shadow rounded hover:shadow-lg transition cursor-pointer relative";
-
-        div.innerHTML = `
-          <h3 class="font-bold">${note.title}</h3>
-          <p class="text-gray-700">${note.body || ""}</p>
-          <button onclick="editNote('${note.id}')" class="absolute top-2 right-10 text-blue-500 hover:underline">Edit</button>
-          <button onclick="deleteNote('${note.id}')" class="absolute top-2 right-2 text-red-500 hover:underline">X</button>
-        `;
-        notesEl.appendChild(div);
-      });
-    }
-
-    async function saveNote() {
-      const title = titleEl.value.trim();
-      const body = bodyEl.value.trim();
-      if (!title || !body) return alert("Please fill in both fields");
-
-      if(editingId){
-        await fetch(`/api/notes/${editingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: editingId, title, body })
-        });
-        editingId = null;
-      } else {
-        const note = { id: Date.now().toString(), title, body };
-        await fetch("/api/notes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(note)
-        });
-      }
-
-      titleEl.value = "";
-      bodyEl.value = "";
+// Animation to open notebook
+cover.addEventListener('click', () => {
+  gsap.to(cover, { rotateY: -160, duration: 1.2, ease: "power2.inOut", onComplete: () => {
+      cover.style.display = "none";
       fetchNotes();
-    }
+  }});
+});
 
-    async function editNote(id) {
-      const res = await fetch(`/api/notes/${id}`);
-      if (!res.ok) return alert("Note not found");
-      const note = await res.json();
-      titleEl.value = note.title;
-      bodyEl.value = note.body;
-      editingId = id;
-      titleEl.focus();
-    }
+// Fetch notes from Flask API
+async function fetchNotes() {
+  const res = await fetch("/api/notes");
+  const notes = await res.json();
+  pagesContainer.innerHTML = '';
+  notes.forEach((note, index) => {
+    const page = document.createElement('div');
+    page.className = 'page';
+    page.style.zIndex = notes.length - index;
+    page.innerHTML = `
+      <div class="sticky-note" draggable="true">
+        <h2>${note.title}</h2>
+        <p>${note.body}</p>
+        <button onclick="editNote('${note.id}')" class="text-blue-600 hover:underline absolute top-2 right-10">Edit</button>
+        <button onclick="deleteNote('${note.id}')" class="text-red-600 hover:underline absolute top-2 right-2">X</button>
+      </div>
+      <div class="page-number">Page ${index + 1}</div>
+    `;
+    pagesContainer.appendChild(page);
+    // animate flip
+    gsap.fromTo(page, { rotateY: -180 }, { rotateY: 0, duration: 1, delay: 0.2 * index });
+  });
+}
 
-    async function deleteNote(id) {
-      if (!confirm("Delete this note?")) return;
-      await fetch(`/api/notes/${id}`, { method: "DELETE" });
-      fetchNotes();
-    }
+// Save a new note
+async function saveNote() {
+  const title = prompt("Enter note title:");
+  const body = prompt("Write your note:");
+  if (!title || !body) return alert("Please enter both title and body");
 
-    fetchNotes();
-  </script>
+  const note = { id: Date.now().toString(), title, body };
+  await fetch("/api/notes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(note)
+  });
+  fetchNotes();
+}
+
+// Edit note
+async function editNote(id) {
+  const res = await fetch(`/api/notes/${id}`);
+  if (!res.ok) return alert("Note not found");
+  const note = await res.json();
+  const newTitle = prompt("Edit title:", note.title);
+  const newBody = prompt("Edit body:", note.body);
+  if (!newTitle || !newBody) return;
+  await fetch(`/api/notes/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, title: newTitle, body: newBody })
+  });
+  fetchNotes();
+}
+
+// Delete note
+async function deleteNote(id) {
+  if(!confirm("Delete this note?")) return;
+  await fetch(`/api/notes/${id}`, { method: "DELETE" });
+  fetchNotes();
+}
+</script>
+
 </body>
 </html>

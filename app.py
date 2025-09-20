@@ -55,7 +55,7 @@ def api_create_note():
     write_notes(notes)
     return jsonify(payload), 201
 
-# API: update note by id (replace)
+# API: update note by id (merge fields)
 @app.route("/api/notes/<note_id>", methods=["PUT"])
 def api_update_note(note_id):
     payload = request.get_json(force=True)
@@ -63,8 +63,7 @@ def api_update_note(note_id):
     updated = False
     for idx, n in enumerate(notes):
         if n.get("id") == note_id:
-            # Merge with old note to keep fields like 'body'
-            notes[idx] = {**n, **payload}
+            notes[idx] = {**n, **payload}  # merge old and new
             updated = True
             break
     if not updated:
